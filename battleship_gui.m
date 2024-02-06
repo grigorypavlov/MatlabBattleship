@@ -1,4 +1,4 @@
-function battleship_gui
+function battleship_guiv05
     fig = figure('Name', 'Schiffe Versenken', 'NumberTitle', 'off', 'Resize', 'off', 'Position', [100, 100, 650, 500]);
     gridSize = 10;
     buttonSize = [30, 30];
@@ -94,16 +94,52 @@ function battleship_gui
 
 
     function placeComputerShips()
-        numShipsPlaced = 0;
-        while numShipsPlaced < 5
-            row = randi(gridSize);
-            col = randi(gridSize);
-            if computerBoard(row, col) == 0
-                computerBoard(row, col) = 1;
-                numShipsPlaced = numShipsPlaced + 1;
+        shipSizes = [4, 3, 2, 1, 1]; % Array of ship sizes
+        for shipSize = shipSizes
+            placed = false;
+            while ~placed
+                orientation = randi([1, 2]); % 1 for horizontal, 2 for vertical
+                if orientation == 1 % Horizontal
+                    row = randi(gridSize);
+                    col = randi([1, gridSize - shipSize + 1]);
+                else % Vertical
+                    row = randi([1, gridSize - shipSize + 1]);
+                    col = randi(gridSize);
+                end
+            
+                % Check if the space is free for the ship
+                if isSpaceFree(computerBoard, row, col, shipSize, orientation)
+                    % Place the ship
+                    for i = 0:(shipSize - 1)
+                        if orientation == 1
+                            computerBoard(row, col + i) = 1;
+                        else
+                            computerBoard(row + i, col) = 1;
+                        end
+                    end
+                    placed = true;
+                end
             end
         end
     end
+
+function free = isSpaceFree(board, row, col, size, orientation)
+    free = true;
+    for i = 0:(size - 1)
+        if orientation == 1
+            if board(row, col + i) ~= 0
+                free = false;
+                break;
+            end
+        else
+            if board(row + i, col) ~= 0
+                free = false;
+                break;
+            end
+        end
+    end
+end
+
 
     function computerAttack()
         row = randi(gridSize);
