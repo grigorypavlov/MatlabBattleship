@@ -57,29 +57,31 @@ function battleship_gui
     function playerBoardCallback(src, ~, row, col)
         if numPlayerShips < 5 && playerBoard(row, col) == 0
             playerBoard(row, col) = 1;
-            set(src, 'String', 'S', 'Enable', 'off');
+            set(src, 'String', 'S', 'Enable', 'off', 'BackgroundColor', [0.5, 1, 0.5]); % Light green for unhit ship
             numPlayerShips = numPlayerShips + 1;
             if numPlayerShips == 5
-                updateStatus('Alle Schiffe platziert. Beginne das Spiel!');
-                if startingPlayer == 'computer'
-                    computerAttack(); % Let the computer attack only after player has placed all ships
-                end
+                updateStatus('Alle Schiffe platziert. Warte auf den Gegner.');
                 set(arrayfun(@(x) x, computerButtons), 'Enable', 'on');
+                if strcmp(startingPlayer, 'computer')
+                    pause(1); % Short delay before computer starts if it is the starting player
+                    computerAttack(); % Initiate computer attack only after player has placed all ships
+                end
             else
                 updateStatus(sprintf('Platziere deine Schiffe (%d/5).', numPlayerShips));
             end
         end
     end
 
+
     function computerBoardCallback(src, ~, row, col)
         set(src, 'Enable', 'off'); % Disable the button to prevent multiple clicks
         if computerBoard(row, col) == 0
             computerBoard(row, col) = 3; % Miss
-            set(src, 'String', '~');
+            set(src, 'String', '~', 'BackgroundColor', [0.678, 0.847, 0.902]); % Light blue
             updateStatus('Fehlschuss!');
         elseif computerBoard(row, col) == 1
             computerBoard(row, col) = 2; % Hit
-            set(src, 'String', 'X', 'ForegroundColor', 'red');
+            set(src, 'String', 'X', 'ForegroundColor', 'white', 'BackgroundColor', 'red');
             updateStatus('Treffer!');
             if checkWin(computerBoard)
                 updateStatus('Spieler gewinnt! Alle Schiffe versenkt.');
@@ -89,6 +91,7 @@ function battleship_gui
         end
         computerAttack();
     end
+
 
     function placeComputerShips()
         numShipsPlaced = 0;
@@ -103,28 +106,29 @@ function battleship_gui
     end
 
     function computerAttack()
-        while true
-            row = randi(gridSize);
-            col = randi(gridSize);
-            if playerBoard(row, col) <= 1
-                playerButtons(row, col).Enable = 'off'; % Disable button
-                if playerBoard(row, col) == 1
-                    playerBoard(row, col) = 2; % Hit
-                    set(playerButtons(row, col), 'String', 'X', 'ForegroundColor', 'red');
-                    updateStatus('Computer hat getroffen!');
-                    if checkWin(playerBoard)
-                        updateStatus('Computer gewinnt! Alle Schiffe versenkt.');
-                        disableBoard(playerButtons);
-                        showVictoryScreen('Computer');
-                        return;
-                    end
+        row = randi(gridSize);
+        col = randi(gridSize);
+        if playerBoard(row, col) <= 1
+            if playerBoard(row, col) == 1
+                playerBoard(row, col) = 2; % Mark as hit
+                set(playerButtons(row, col), 'String', 'X', 'ForegroundColor', 'white', 'BackgroundColor', 'red');
+                updateStatus('Computer hat getroffen!');
+                pause(2); % Delay of 2 seconds
+                if checkWin(playerBoard)
+                    updateStatus('Computer gewinnt! Alle Schiffe versenkt.');
+                    disableBoard(playerButtons);
+                    showVictoryScreen('Computer');
                 else
-                    playerBoard(row, col) = 3; % Miss
-                    set(playerButtons(row, col), 'String', '~');
-                    updateStatus('Computer hat verfehlt.');
-                    return; % Exit the loop after computer's turn
+                    computerAttack();
                 end
+            else
+                playerBoard(row, col) = 3; % Mark as miss
+                set(playerButtons(row, col), 'String', '~', 'BackgroundColor', [0.678, 0.847, 0.902]); % Light blue
+                updateStatus('Computer hat verfehlt.');
+                pause(2); % Delay of 2 seconds
             end
+        else
+            computerAttack();
         end
     end
 
