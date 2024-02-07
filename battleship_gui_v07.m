@@ -66,7 +66,7 @@ function battleship_gui_v07
         end
         uicontrol('Style', 'pushbutton', 'String', 'Neustart', 'Position', [30, 470, 100, 20], 'Parent', fig, 'Callback', @(src,event)startScreen());
         uicontrol('Style', 'pushbutton', 'String', 'Spiel beenden', 'Position', [140, 470, 100, 20], 'Parent', fig, 'Callback', @(src, event)close(fig));
-        uicontrol('Style', 'text', 'String', sprintf('Platziere dein %d-Felder Schiff.', shipSizes(currentShipSizeIndex)), 'Position', [30, 400, 300, 20], 'Parent', fig);
+        uicontrol('Style', 'text', 'String', sprintf('Spielerfeld'), 'Position', [30, 400, 300, 20], 'Parent', fig);
         uicontrol('Style', 'pushbutton', 'String', 'Horizontal', 'Position', [340, 400, 100, 20], 'Parent', fig, 'Callback', @(src,event)setOrientation('horizontal'));
         uicontrol('Style', 'pushbutton', 'String', 'Vertikal', 'Position', [450, 400, 100, 20], 'Parent', fig, 'Callback', @(src,event)setOrientation('vertical'));
     end
@@ -78,20 +78,16 @@ function battleship_gui_v07
 
     function playerBoardCallback(src, ~, row, col)
         % Überprüfe, ob wir noch Schiffe zu platzieren haben
-        if currentShipSizeIndex > length(shipSizes)
+        if numPlayerShips >= length(shipSizes)
             updateStatus('Alle Schiffe sind bereits platziert.');
             return;
         end
-    
+
         shipSize = shipSizes(currentShipSizeIndex); % Aktuelle Schiffgröße
         if strcmp(shipOrientation, 'horizontal')
             % Überprüfe, ob das Schiff horizontal platziert werden kann
-            if col + shipSize - 1 > gridSize
-                updateStatus('Schiff passt nicht in diese Position (horizontal).');
-                return;
-            end
-            if ~isSpaceFree(playerBoard, row, col, shipSize, 1)
-                updateStatus('Platz ist bereits belegt oder in der Nähe anderer Schiffe.');
+            if col + shipSize - 1 > gridSize || ~isSpaceFree(playerBoard, row, col, shipSize, 1)
+                updateStatus('Schiff passt nicht in diese Position (horizontal) oder Platz ist bereits belegt.');
                 return;
             end
             % Platziere das Schiff
@@ -101,12 +97,8 @@ function battleship_gui_v07
             end
         else
             % Überprüfe, ob das Schiff vertikal platziert werden kann
-            if row + shipSize - 1 > gridSize
-                updateStatus('Schiff passt nicht in diese Position (vertikal).');
-                return;
-            end
-            if ~isSpaceFree(playerBoard, row, col, shipSize, 2)
-                updateStatus('Platz ist bereits belegt oder in der Nähe anderer Schiffe.');
+            if row + shipSize - 1 > gridSize || ~isSpaceFree(playerBoard, row, col, shipSize, 2)
+                updateStatus('Schiff passt nicht in diese Position (vertikal) oder Platz ist bereits belegt.');
                 return;
             end
             % Platziere das Schiff
@@ -115,18 +107,18 @@ function battleship_gui_v07
                 set(playerButtons(row + i, col), 'String', 'S', 'Enable', 'off', 'BackgroundColor', [0.5, 1, 0.5]);
             end
         end
-    
+
+        % Aktualisiere die Anzahl der platzierten Schiffe
         numPlayerShips = numPlayerShips + 1;
         if numPlayerShips == length(shipSizes)
             updateStatus('Alle Schiffe platziert. Warte auf den Gegner.');
-            % Ermögliche dem Spieler/der Spielerin, nach der Platzierung aller Schiffe Angriffe zu starten
             set(arrayfun(@(x) x, computerButtons), 'Enable', 'on');
             if strcmp(startingPlayer, 'computer')
                 pause(1); % Kurze Verzögerung
                 computerAttack(); % Der Computer startet seinen Angriff
             end
         else
-            currentShipSizeIndex = currentShipSizeIndex + 1; % Gehe zum nächsten Schiff über
+            currentShipSizeIndex = currentShipSizeIndex + 1;
             updateStatus(sprintf('Platziere dein %d-Felder Schiff.', shipSizes(currentShipSizeIndex)));
         end
     end
