@@ -4,7 +4,7 @@ function battleship_gui_v08
     buttonSize = [30, 30];
     playerBoard = zeros(gridSize);
     computerBoard = zeros(gridSize);
-    computerShotStatus = zeros(gridSize); % Matrix, um den Status der Felder zu verfolgen
+    aiShotMatrix = zeros(gridSize); % Matrix, um den Status der Felder zu verfolgen
     playerButtons = gobjects(gridSize, gridSize);
     computerButtons = gobjects(gridSize, gridSize);
     shipSizes = [5, 4, 3, 2, 2]; % Array of ship sizes for both player and computer
@@ -14,6 +14,8 @@ function battleship_gui_v08
     statusText = uicontrol('Style', 'text', 'Position', [30, 430, 590, 40], 'Parent', fig);
     startScreen();
     startingPlayer = ''; % Will be set to either 'player' or 'computer'
+    aiAttackMode = 'hunt'; % KI-Modus (Hunt/Target)
+
     
     function startScreen()
         clf(fig); % Bereinige das Figure-Objekt für den Startbildschirm
@@ -34,7 +36,7 @@ function battleship_gui_v08
         % Setze die Spielbretter zurück
         playerBoard = zeros(gridSize);
         computerBoard = zeros(gridSize);
-        computerShotStatus = zeros(gridSize); % Matrix, um den Status der Felder zu verfolgen
+        aiShotMatrix = zeros(gridSize); % Matrix, um den Status der Felder zu verfolgen
 
         % Setze die Schiffsplatzierungsvariablen zurück
         numPlayerShips = 0;
@@ -116,8 +118,11 @@ function battleship_gui_v08
             updateStatus('Alle Schiffe platziert. Warte auf den Gegner.');
             set(arrayfun(@(x) x, computerButtons), 'Enable', 'on');
             if strcmp(startingPlayer, 'computer')
+                updateStatus('Alle Schiffe platziert. Warte auf den Gegner.');
                 pause(1); % Kurze Verzögerung
                 computerAttack(); % Der Computer startet seinen Angriff
+            else 
+                updateStatus('Alle Schiffe platziert. Du bist dran mit Schiessen.');
             end
         else
             currentShipSizeIndex = currentShipSizeIndex + 1;
@@ -209,6 +214,7 @@ function battleship_gui_v08
                     disableBoard(playerButtons);
                     showVictoryScreen('Computer');
                 else
+                    aiAttackMode = 'target';
                     computerAttack();
                 end
             else
@@ -219,50 +225,40 @@ function battleship_gui_v08
             end
         end
         % Aktualisierung des Schussstatus der Computer
-    if playerBoard(row, col) == 2
-        computerShotStatus(row, col) = 1; % Angeschossen aber noch nicht versenkt
-    else
-        computerShotStatus(row, col) = 9; % Verfehlt
-    end
-  end
-
-
-function [row, col] = findBestMove()
-    persistent mode; % Persistente Variable, um den Modus zwischen den Aufrufen zu speichern
-
-    % Überprüfe, ob der Modus bereits festgelegt ist
-    if isempty(mode)
-        % Wenn nicht, setze den Modus auf 'hunt'
-        mode = 'hunt';
-    end
-
-    if strcmp(mode, 'hunt')
-        % Im Hunt-Modus wähle zufällige Positionen im Schachbrettmuster
-        foundValidMove = false;
-        while ~foundValidMove
-            row = randi(gridSize); % Wähle eine zufällige Zeile
-            if mod(row, 2) == 0 % Wenn die Zeile gerade ist
-                col = round(randi([2, gridSize])/2)*2; % Wähle eine zufällige gerade Spalte zwischen 2 und gridSize
-            else % Wenn die Zeile ungerade ist
-                col = round((randi([1, gridSize-1])-1)/2)*2 + 1; % Wähle eine zufällige ungerade Spalte zwischen 1 und gridSize-1
-            end
-            % Überprüfe, ob das Feld bereits angeschossen wurde
-            if computerShotStatus(row, col) == 0
-                foundValidMove = true; % Gültiger Zug gefunden
-            end
+        if playerBoard(row, col) == 2
+            aiShotMatrix(row, col) = 1; % Angeschossen aber noch nicht versenkt
+        else
+            aiShotMatrix(row, col) = 9; % Verfehlt
         end
-    else
-        % Im Target-Modus suche nach angeschossenen Schiffen
-        [row, col] = findTarget();
     end
-end
 
-function [row, col] = findTarget()
-    % Waiting for Francesco to implement sinking ship logic
-    row = randi(gridSize);
-    col = randi(gridSize);
-end
-
+    function [row, col] = findBestMove()
+        if strcmp(aiAttackMode, 'hunt')
+            % Im Hunt-Modus wähle zufällige Positionen im Schachbrettmuster
+            foundValidMove = false;
+            while ~foundValidMove
+                row = randi(gridSize); % Wähle eine zufällige Zeile
+                if mod(row, 2) == 0 % Wenn die Zeile gerade ist
+                    col = round(randi([2, gridSize])/2)*2; % Wähle eine zufällige gerade Spalte zwischen 2 und gridSize
+                else % Wenn die Zeile ungerade ist
+                    col = round((randi([1, gridSize-1])-1)/2)*2 + 1; % Wähle eine zufällige ungerade Spalte zwischen 1 und gridSize-1
+                end
+                % Überprüfe, ob das Feld bereits angeschossen wurde
+                if aiShotMatrix(row, col) == 0
+                    foundValidMove = true; % Gültiger Zug gefunden
+                end
+            end
+        else
+            % Im Target-Modus suche nach angeschossenen Schiffen
+            [row, col] = findTarget();
+        end
+    end
+    
+    function [row, col] = findTarget()
+        % Waiting for Francesco to implement sinking ship logic
+        row = randi(gridSize);
+        col = randi(gridSize);
+    end
 
     function win = checkWin(board)
         win = all(board(:) ~= 1); % Win condition: no '1's left on the board
