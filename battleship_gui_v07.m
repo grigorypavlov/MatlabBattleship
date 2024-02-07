@@ -12,8 +12,9 @@ function battleship_gui_v07
     numPlayerShips = 0;
     statusText = uicontrol('Style', 'text', 'Position', [30, 430, 590, 40], 'Parent', fig);
     startScreen();
-    startingPlayer = ''; % Will be set to either 'player' or 'computer'
-    
+    startingPlayer = ''; % Will be set to either 'player' or 'computer';
+    computerShotStatus = zeros(gridSize);
+
     function startScreen()
         clf(fig);
         uicontrol('Style', 'text', 'String', 'Willkommen zu Schiffe Versenken!', 'Position', [100, 300, 450, 40], 'FontSize', 16, 'Parent', fig);
@@ -190,30 +191,36 @@ end
 
 
     function computerAttack()
-        [row, col] = findBestMove();
-        if playerBoard(row, col) <= 1
-            if playerBoard(row, col) == 1
-                playerBoard(row, col) = 2; % Mark as hit
-                set(playerButtons(row, col), 'String', 'X', 'ForegroundColor', 'white', 'BackgroundColor', 'red');
-                updateStatus('Computer hat getroffen!');
-                pause(2); % Delay of 2 seconds
-                if checkWin(playerBoard)
-                    updateStatus('Computer gewinnt! Alle Schiffe versenkt.');
-                    disableBoard(playerButtons);
-                    showVictoryScreen('Computer');
-                else
-                    computerAttack();
-                end
+    [row, col] = findBestMove();
+    if playerBoard(row, col) <= 1
+        if playerBoard(row, col) == 1
+            playerBoard(row, col) = 2; % Mark as hit
+            set(playerButtons(row, col), 'String', 'X', 'ForegroundColor', 'white', 'BackgroundColor', 'red');
+            updateStatus('Computer hat getroffen!');
+            pause(2); % Delay of 2 seconds
+            if checkWin(playerBoard)
+                updateStatus('Computer gewinnt! Alle Schiffe versenkt.');
+                disableBoard(playerButtons);
+                showVictoryScreen('Computer');
             else
-                playerBoard(row, col) = 3; % Mark as miss
-                set(playerButtons(row, col), 'String', '~', 'BackgroundColor', [0.678, 0.847, 0.902]); % Light blue
-                updateStatus('Computer hat verfehlt.');
-                pause(2); % Delay of 2 seconds
+                computerAttack();
             end
         else
-            computerAttack();
+            playerBoard(row, col) = 3; % Mark as miss
+            set(playerButtons(row, col), 'String', '~', 'BackgroundColor', [0.678, 0.847, 0.902]); % Light blue
+            updateStatus('Computer hat verfehlt.');
+            pause(2); % Delay of 2 seconds
         end
+    else
+        computerAttack();
     end
+    % Aktualisierung des Schussstatus der Computer
+    if playerBoard(row, col) == 2
+        computerShotStatus(row, col) = 1; % Anschossen aber noch nicht versenkt
+    else
+        computerShotStatus(row, col) = 9; % Verfehlt
+    end
+end
 
 function [row, col] = findBestMove()
     persistent mode; % Persistente Variable, um den Modus zwischen den Aufrufen zu speichern
@@ -222,6 +229,13 @@ function [row, col] = findBestMove()
     if isempty(mode)
         % Wenn nicht, setze den Modus auf 'hunt'
         mode = 'hunt';
+    end
+    
+    % Überprüfe, ob der Modus gewechselt werden soll
+    if any(computerShotStatus(:) == 1) % Wenn irgendwo im computerShotStatus eine 1 zu finden ist
+        mode = 'target'; % Wechsel zum Target-Modus
+    else
+        mode = 'hunt'; % Andernfalls bleibe im Hunt-Modus
     end
 
     if strcmp(mode, 'hunt')
