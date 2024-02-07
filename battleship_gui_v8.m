@@ -1,9 +1,10 @@
-function battleship_gui_v07
+function battleship_gui_v08
     fig = figure('Name', 'Schiffe Versenken', 'NumberTitle', 'off', 'Resize', 'off', 'Position', [100, 100, 650, 500]);
     gridSize = 10;
     buttonSize = [30, 30];
     playerBoard = zeros(gridSize);
     computerBoard = zeros(gridSize);
+    computerShotStatus = zeros(gridSize); % Matrix, um den Status der Felder zu verfolgen
     playerButtons = gobjects(gridSize, gridSize);
     computerButtons = gobjects(gridSize, gridSize);
     shipSizes = [5, 4, 3, 2, 2]; % Array of ship sizes for both player and computer
@@ -33,6 +34,7 @@ function battleship_gui_v07
         % Setze die Spielbretter zurück
         playerBoard = zeros(gridSize);
         computerBoard = zeros(gridSize);
+        computerShotStatus = zeros(gridSize); % Matrix, um den Status der Felder zu verfolgen
 
         % Setze die Schiffsplatzierungsvariablen zurück
         numPlayerShips = 0;
@@ -176,22 +178,22 @@ function battleship_gui_v07
         end
     end
 
-function free = isSpaceFree(board, row, col, size, orientation)
-    free = true;
-    for i = 0:(size - 1)
-        if orientation == 1
-            if board(row, col + i) ~= 0
-                free = false;
-                break;
-            end
-        else
-            if board(row + i, col) ~= 0
-                free = false;
-                break;
+    function free = isSpaceFree(board, row, col, size, orientation)
+        free = true;
+        for i = 0:(size - 1)
+            if orientation == 1
+                if board(row, col + i) ~= 0
+                    free = false;
+                    break;
+                end
+            else
+                if board(row + i, col) ~= 0
+                    free = false;
+                    break;
+                end
             end
         end
     end
-end
 
 
     function computerAttack()
@@ -216,7 +218,13 @@ end
                 pause(2); % Delay of 2 seconds
             end
         end
+        % Aktualisierung des Schussstatus der Computer
+    if playerBoard(row, col) == 2
+        computerShotStatus(row, col) = 1; % Angeschossen aber noch nicht versenkt
+    else
+        computerShotStatus(row, col) = 9; % Verfehlt
     end
+  end
 
 
 function [row, col] = findBestMove()
@@ -230,19 +238,24 @@ function [row, col] = findBestMove()
 
     if strcmp(mode, 'hunt')
         % Im Hunt-Modus wähle zufällige Positionen im Schachbrettmuster
-        row = randi(gridSize); % Wähle eine zufällige Zeile
-        if mod(row, 2) == 0 % Wenn die Zeile gerade ist
-            col = round(randi([2, gridSize])/2)*2; % Wähle eine zufällige gerade Spalte zwischen 2 und gridSize
-        else % Wenn die Zeile ungerade ist
-            col = round((randi([1, gridSize-1])-1)/2)*2 + 1; % Wähle eine zufällige ungerade Spalte zwischen 1 und gridSize-1
+        foundValidMove = false;
+        while ~foundValidMove
+            row = randi(gridSize); % Wähle eine zufällige Zeile
+            if mod(row, 2) == 0 % Wenn die Zeile gerade ist
+                col = round(randi([2, gridSize])/2)*2; % Wähle eine zufällige gerade Spalte zwischen 2 und gridSize
+            else % Wenn die Zeile ungerade ist
+                col = round((randi([1, gridSize-1])-1)/2)*2 + 1; % Wähle eine zufällige ungerade Spalte zwischen 1 und gridSize-1
+            end
+            % Überprüfe, ob das Feld bereits angeschossen wurde
+            if computerShotStatus(row, col) == 0
+                foundValidMove = true; % Gültiger Zug gefunden
+            end
         end
     else
         % Im Target-Modus suche nach angeschossenen Schiffen
         [row, col] = findTarget();
     end
 end
-
-
 
 function [row, col] = findTarget()
     % Waiting for Francesco to implement sinking ship logic
