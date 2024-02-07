@@ -15,20 +15,33 @@ function battleship_gui_v07
     startingPlayer = ''; % Will be set to either 'player' or 'computer'
     
     function startScreen()
-        clf(fig);
+        clf(fig); % Bereinige das Figure-Objekt für den Startbildschirm
+
+        % Es könnte nützlich sein, hier zusätzliche Resets durchzuführen,
+        % insbesondere wenn `startScreen` auf andere Weise aufgerufen werden kann,
+        % die oben nicht abgedeckt sind.
+
+        % UI-Elemente für den Startbildschirm
         uicontrol('Style', 'text', 'String', 'Willkommen zu Schiffe Versenken!', 'Position', [100, 300, 450, 40], 'FontSize', 16, 'Parent', fig);
         uicontrol('Style', 'pushbutton', 'String', 'Spiel starten', 'Position', [275, 200, 100, 40], 'Callback', @initializeGame, 'Parent', fig);
         uicontrol('Style', 'pushbutton', 'String', 'Spiel beenden', 'Position', [275, 150, 100, 40], 'Callback', @(src, event)close(fig), 'Parent', fig);
     end
 
     function initializeGame(~, ~)
-        clf(fig);
+        clf(fig); % Bereinige das Figure-Objekt, um die UI zurückzusetzen
+
+        % Setze die Spielbretter zurück
         playerBoard = zeros(gridSize);
         computerBoard = zeros(gridSize);
+
+        % Setze die Schiffsplatzierungsvariablen zurück
         numPlayerShips = 0;
-        setupGameUI();
-        placeComputerShips();
-        decideStartingPlayer(); % Decide who starts the game but do not initiate attack
+        currentShipSizeIndex = 1; % Zurück zum ersten Schiff
+        shipOrientation = 'horizontal'; % Standardorientierung zurücksetzen
+
+        setupGameUI(); % Initialisiere die Spiel-UI neu
+        placeComputerShips(); % Platziere die Schiffe des Computers neu
+        decideStartingPlayer(); % Entscheide neu, wer das Spiel beginnt
     end
     
     % New function to decide who starts without initiating an attack
