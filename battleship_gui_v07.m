@@ -190,8 +190,7 @@ end
 
 
     function computerAttack()
-        row = randi(gridSize);
-        col = randi(gridSize);
+        [row, col] = findBestMove();
         if playerBoard(row, col) <= 1
             if playerBoard(row, col) == 1
                 playerBoard(row, col) = 2; % Mark as hit
@@ -215,6 +214,38 @@ end
             computerAttack();
         end
     end
+
+function [row, col] = findBestMove()
+    persistent mode; % Persistente Variable, um den Modus zwischen den Aufrufen zu speichern
+
+    % Überprüfe, ob der Modus bereits festgelegt ist
+    if isempty(mode)
+        % Wenn nicht, setze den Modus auf 'hunt'
+        mode = 'hunt';
+    end
+
+    if strcmp(mode, 'hunt')
+        % Im Hunt-Modus wähle zufällige Positionen im Schachbrettmuster
+        row = randi(gridSize); % Wähle eine zufällige Zeile
+        if mod(row, 2) == 0 % Wenn die Zeile gerade ist
+            col = round(randi([2, gridSize])/2)*2; % Wähle eine zufällige gerade Spalte zwischen 2 und gridSize
+        else % Wenn die Zeile ungerade ist
+            col = round((randi([1, gridSize-1])-1)/2)*2 + 1; % Wähle eine zufällige ungerade Spalte zwischen 1 und gridSize-1
+        end
+    else
+        % Im Target-Modus suche nach angeschossenen Schiffen
+        [row, col] = findTarget();
+    end
+end
+
+
+
+function [row, col] = findTarget()
+    % Waiting for Francesco to implement sinking ship logic
+    row = randi(gridSize);
+    col = randi(gridSize);
+end
+
 
     function win = checkWin(board)
         win = all(board(:) ~= 1); % Win condition: no '1's left on the board
