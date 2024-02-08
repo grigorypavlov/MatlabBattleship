@@ -13,7 +13,7 @@ function battleship_gui_v07
     statusText = uicontrol('Style', 'text', 'Position', [30, 430, 590, 40], 'Parent', fig);
     startScreen();
     startingPlayer = ''; % Will be set to either 'player' or 'computer'
-    global waterSound bombSound startgame;
+    global waterSound bombSound;
     
     function playBackgroundMusic()
         audioFilePath = 'Menu.mp3';
@@ -348,5 +348,3 @@ end
         uicontrol('Style', 'pushbutton', 'String', 'Spiel beenden', 'Position', [265, 110, 150, 50], 'FontSize', 12, 'Parent', fig, 'Callback', @(src, event)close(fig), 'BackgroundColor', [0, 0, 0, 0.5], 'ForegroundColor', [1, 1, 1]);
     end
 end
-
-
