@@ -36,7 +36,8 @@ function battleship_gui_v08
         % Setze die Spielbretter zurück
         playerBoard = zeros(gridSize);
         computerBoard = zeros(gridSize);
-        aiShotMatrix = zeros(gridSize); % Matrix, um den Status der Felder zu verfolgen
+        aiShotMatrix = zeros(gridSize);
+        aiAttackMode = 'hunt';
 
         % Setze die Schiffsplatzierungsvariablen zurück
         numPlayerShips = 0;
@@ -206,6 +207,7 @@ function battleship_gui_v08
         if playerBoard(row, col) <= 1
             if playerBoard(row, col) == 1
                 playerBoard(row, col) = 2; % Mark as hit
+                aiShotMatrix(row, col) = 1; % KI: Angeschossen aber noch nicht versenkt
                 set(playerButtons(row, col), 'String', 'X', 'ForegroundColor', 'white', 'BackgroundColor', 'red');
                 updateStatus('Computer hat getroffen!');
                 pause(2); % Delay of 2 seconds
@@ -219,16 +221,11 @@ function battleship_gui_v08
                 end
             else
                 playerBoard(row, col) = 3; % Mark as miss
+                aiShotMatrix(row, col) = 9; % KI: Verfehlt
                 set(playerButtons(row, col), 'String', '~', 'BackgroundColor', [0.678, 0.847, 0.902]); % Light blue
                 updateStatus('Computer hat verfehlt.');
                 pause(2); % Delay of 2 seconds
             end
-        end
-        % Aktualisierung des Schussstatus der Computer
-        if playerBoard(row, col) == 2
-            aiShotMatrix(row, col) = 1; % Angeschossen aber noch nicht versenkt
-        else
-            aiShotMatrix(row, col) = 9; % Verfehlt
         end
     end
 
@@ -255,10 +252,53 @@ function battleship_gui_v08
     end
     
     function [row, col] = findTarget()
-        % Waiting for Francesco to implement sinking ship logic
-        row = randi(gridSize);
-        col = randi(gridSize);
+        % Find all cells with a hit (value 1) in the aiShotMatrix
+        [hitRows, hitCols] = find(aiShotMatrix == 1);
+        
+        % Initialize an empty list to store all legal neighboring cells
+        allLegalNeighboringCells = [];
+        
+        % Iterate over each hit cell
+        for i = 1:length(hitRows)
+            hitRow = hitRows(i);
+            hitCol = hitCols(i);
+            
+            % Determine neighboring cells
+            neighboringCells = [];
+            % Check north
+            if hitRow > 1 && aiShotMatrix(hitRow - 1, hitCol) == 0
+                neighboringCells = [neighboringCells; hitRow - 1, hitCol];
+            end
+            % Check south
+            if hitRow < gridSize && aiShotMatrix(hitRow + 1, hitCol) == 0
+                neighboringCells = [neighboringCells; hitRow + 1, hitCol];
+            end
+            % Check west
+            if hitCol > 1 && aiShotMatrix(hitRow, hitCol - 1) == 0
+                neighboringCells = [neighboringCells; hitRow, hitCol - 1];
+            end
+            % Check east
+            if hitCol < gridSize && aiShotMatrix(hitRow, hitCol + 1) == 0
+                neighboringCells = [neighboringCells; hitRow, hitCol + 1];
+            end
+            
+            % Add legal neighboring cells to the list
+            allLegalNeighboringCells = [allLegalNeighboringCells; neighboringCells];
+        end
+        
+        % If there are legal neighboring cells, choose one randomly
+        if ~isempty(allLegalNeighboringCells)
+            % Choose a random legal neighboring cell
+            randomIndex = randi(size(allLegalNeighboringCells, 1));
+            row = allLegalNeighboringCells(randomIndex, 1);
+            col = allLegalNeighboringCells(randomIndex, 2);
+        else
+            % If there are no legal neighboring cells, switch to hunt mode
+            aiAttackMode = 'hunt';
+            [row, col] = findBestMove(); % Make a random shot in hunt mode
+        end
     end
+
 
     function win = checkWin(board)
         win = all(board(:) ~= 1); % Win condition: no '1's left on the board
