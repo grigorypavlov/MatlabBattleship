@@ -13,6 +13,7 @@ function battleship_gui_v07
     statusText = uicontrol('Style', 'text', 'Position', [30, 430, 590, 40], 'Parent', fig);
     startScreen();
     startingPlayer = ''; % Will be set to either 'player' or 'computer'
+    global waterSound bombSound startgame;
     
     function playBackgroundMusic()
         audioFilePath = 'Menu.mp3';
@@ -35,7 +36,7 @@ function battleship_gui_v07
         end
         delete(gcf);
     end
-       
+
     function startScreen()
         clf(fig); % Clear the Figure object for the start screen
         playBackgroundMusic();
@@ -71,6 +72,13 @@ function battleship_gui_v07
         currentShipSizeIndex = 1; % Zurück zum ersten Schiff
         shipOrientation = 'horizontal'; % Standardorientierung zurücksetzen
 
+        % Laden der Soundeffekte und Initialisieren der audioplayer-Objekte
+        [y1, Fs1] = audioread('wasser.mp3');
+        waterSound = audioplayer(y1, Fs1);
+
+        [y2, Fs2] = audioread('bomb.mp3');
+        bombSound = audioplayer(y2, Fs2);
+
         setupGameUI(); % Initialisiere die Spiel-UI neu
         placeComputerShips(); % Platziere die Schiffe des Computers neu
         decideStartingPlayer(); % Entscheide neu, wer das Spiel beginnt
@@ -94,9 +102,9 @@ function battleship_gui_v07
     
         % Adjust the placement of player and computer grids for better visual separation
         % Player Grid
-        playerLabel = uicontrol('Style', 'text', 'String', 'Spielfeld', 'Position', [30, 430, 300, 20], 'Parent', fig);
+        uicontrol('Style', 'text', 'String', 'Spielfeld', 'Position', [30, 430, 300, 20], 'Parent', fig);
         % Computer Grid
-        computerLabel = uicontrol('Style', 'text', 'String', 'Computerfeld', 'Position', [350, 430, 300, 20], 'Parent', fig);
+        uicontrol('Style', 'text', 'String', 'Computerfeld', 'Position', [350, 430, 300, 20], 'Parent', fig);
     
         % Generate buttons for player and computer grids
         for i = 1:gridSize
@@ -121,7 +129,7 @@ function battleship_gui_v07
         updateStatus(sprintf('Ausrichtung gesetzt zu %s. Platziere dein Schiff.', orientation));
     end
 
-    function playerBoardCallback(src, ~, row, col)
+    function playerBoardCallback(~, ~, row, col)
         % Überprüfe, ob wir noch Schiffe zu platzieren haben
         if numPlayerShips >= length(shipSizes)
             updateStatus('Alle Schiffe sind bereits platziert.');
@@ -174,11 +182,13 @@ function battleship_gui_v07
             computerBoard(row, col) = 3; % Miss
             set(src, 'String', '~', 'BackgroundColor', [0.678, 0.847, 0.902]); % Light blue
             updateStatus('Fehlschuss!');
+            play(waterSound); % Spielt den Fehlschusssound
             computerAttack(); % Now it's computer's turn
         elseif computerBoard(row, col) == 1
             computerBoard(row, col) = 2; % Hit
             set(src, 'String', 'X', 'ForegroundColor', 'white', 'BackgroundColor', 'red');
             updateStatus('Treffer!');
+            play(bombSound); % Spielt den Treffersound
             % Do not call computerAttack here to allow for another player turn
             if checkWin(computerBoard)
                 updateStatus('Spieler gewinnt! Alle Schiffe versenkt.');
@@ -240,12 +250,14 @@ end
 
 
     function computerAttack()
+        pause(1);
         [row, col] = findBestMove();
         if playerBoard(row, col) <= 1
             if playerBoard(row, col) == 1
                 playerBoard(row, col) = 2; % Mark as hit
                 set(playerButtons(row, col), 'String', 'X', 'ForegroundColor', 'white', 'BackgroundColor', 'red');
                 updateStatus('Computer hat getroffen!');
+                play(bombSound); % Spielt den Treffersound
                 pause(2); % Delay of 2 seconds
                 if checkWin(playerBoard)
                     updateStatus('Computer gewinnt! Alle Schiffe versenkt.');
@@ -258,42 +270,45 @@ end
                 playerBoard(row, col) = 3; % Mark as miss
                 set(playerButtons(row, col), 'String', '~', 'BackgroundColor', [0.678, 0.847, 0.902]); % Light blue
                 updateStatus('Computer hat verfehlt.');
-                pause(2); % Delay of 2 seconds
+                play(waterSound); % Spielt den Fehlschusssound
+                pause(1); % Delay of 2 seconds
             end
+        else
+            computerAttack();
         end
     end
 
 
-function [row, col] = findBestMove()
-    persistent mode; % Persistente Variable, um den Modus zwischen den Aufrufen zu speichern
-
-    % Überprüfe, ob der Modus bereits festgelegt ist
-    if isempty(mode)
-        % Wenn nicht, setze den Modus auf 'hunt'
-        mode = 'hunt';
-    end
-
-    if strcmp(mode, 'hunt')
-        % Im Hunt-Modus wähle zufällige Positionen im Schachbrettmuster
-        row = randi(gridSize); % Wähle eine zufällige Zeile
-        if mod(row, 2) == 0 % Wenn die Zeile gerade ist
-            col = round(randi([2, gridSize])/2)*2; % Wähle eine zufällige gerade Spalte zwischen 2 und gridSize
-        else % Wenn die Zeile ungerade ist
-            col = round((randi([1, gridSize-1])-1)/2)*2 + 1; % Wähle eine zufällige ungerade Spalte zwischen 1 und gridSize-1
+    function [row, col] = findBestMove()
+        persistent mode; % Persistente Variable, um den Modus zwischen den Aufrufen zu speichern
+    
+        % Überprüfe, ob der Modus bereits festgelegt ist
+        if isempty(mode)
+            % Wenn nicht, setze den Modus auf 'hunt'
+            mode = 'hunt';
         end
-    else
-        % Im Target-Modus suche nach angeschossenen Schiffen
-        [row, col] = findTarget();
+    
+        if strcmp(mode, 'hunt')
+            % Im Hunt-Modus wähle zufällige Positionen im Schachbrettmuster
+            row = randi(gridSize); % Wähle eine zufällige Zeile
+            if mod(row, 2) == 0 % Wenn die Zeile gerade ist
+                col = round(randi([2, gridSize])/2)*2; % Wähle eine zufällige gerade Spalte zwischen 2 und gridSize
+            else % Wenn die Zeile ungerade ist
+                col = round((randi([1, gridSize-1])-1)/2)*2 + 1; % Wähle eine zufällige ungerade Spalte zwischen 1 und gridSize-1
+            end
+        else
+            % Im Target-Modus suche nach angeschossenen Schiffen
+            [row, col] = findTarget();
+        end
     end
-end
-
-
-
-function [row, col] = findTarget()
-    % Waiting for Francesco to implement sinking ship logic
-    row = randi(gridSize);
-    col = randi(gridSize);
-end
+    
+    
+    
+    function [row, col] = findTarget()
+        % Waiting for Francesco to implement sinking ship logic
+        row = randi(gridSize);
+        col = randi(gridSize);
+    end
 
 
     function win = checkWin(board)
@@ -332,9 +347,6 @@ end
         % Button to end the game
         uicontrol('Style', 'pushbutton', 'String', 'Spiel beenden', 'Position', [265, 110, 150, 50], 'FontSize', 12, 'Parent', fig, 'Callback', @(src, event)close(fig), 'BackgroundColor', [0, 0, 0, 0.5], 'ForegroundColor', [1, 1, 1]);
     end
-
-
-
 end
 
 
