@@ -7,13 +7,13 @@ function battleship_gui_workspace
 	aiShotMatrix = zeros(gridSize); % Matrix, um den Status der Felder zu verfolgen
     playerButtons = gobjects(gridSize, gridSize);
     computerButtons = gobjects(gridSize, gridSize);
-    shipSizes = [5, 4, 3, 2, 2]; % Array of ship sizes for both player and computer
-    currentShipSizeIndex = 1; % To track which ship size the player is currently placing
-    shipOrientation = 'horizontal'; % Default orientation
+    shipSizes = [5, 4, 3, 2, 2]; % Unterschiedliche Schiffsgrößen für Spieler und Computer
+    currentShipSizeIndex = 1; % So verfolgen Sie, welche Schiffsgröße der Spieler gerade platziert
+    shipOrientation = 'horizontal'; % Standardausrichtung
     numPlayerShips = 0;
     statusText = uicontrol('Style', 'text', 'Position', [30, 430, 590, 40], 'Parent', fig);
     startScreen();
-    startingPlayer = ''; % Will be set to either 'player' or 'computer'
+    startingPlayer = ''; % Wird entweder auf 'Spieler' oder 'Computer' gesetzt
 	aiAttackMode = 'hunt'; % KI-Modus (Hunt/Target)
     global waterSound bombSound;
     
@@ -40,24 +40,24 @@ function battleship_gui_workspace
     end
 
     function startScreen()
-        clf(fig); % Clear the Figure object for the start screen
+        clf(fig); % Löschen des Objekts Figure für den Startbildschirm
         playBackgroundMusic();
     
-        % Load and resize the background image to fit the figure size
+        % Laden und Anpassen des Hintergrundbildes an die Größe der Figur
         bg = imread('Titlescreen.jpg');
-        bgResized = imresize(bg, [500, 650]); % Resize the image to 500x650 pixels
+        bgResized = imresize(bg, [500, 650]); % Größe des Bildes auf 500x650 Pixel ändern
     
-        % Create axes that fill the figure
+        % Achsen erstellen, die die Abbildung ausfüllen
         ax = axes('Parent', fig, 'Position', [0 0 1 1]);
         imagesc(ax, bgResized);
-        axis(ax, 'off'); % Turn off axis lines and labels
-        uistack(ax, 'bottom'); % Send the axes to the bottom layer
+        axis(ax, 'off'); % Achsenlinien und Beschriftungen ausschalten
+        uistack(ax, 'bottom'); % Senden der Achsen an die unterste Ebene
     
-        % UI elements for the start screen
+        % UI-Elemente für den Startbildschirm
         uicontrol('Style', 'text', 'String', 'Welcome to Battleship!', 'Position', [190, 0, 300, 30], 'FontSize', 20, 'Parent', fig, 'BackgroundColor', [0.678, 0.847, 0.902], 'ForegroundColor', [0, 0, 0]);
-        % Centrally aligned 'Start Game' button
+        % Zentral ausgerichtete "Spiel starten"-Taste
         uicontrol('Style', 'pushbutton', 'String', 'Start Game', 'Position', [290, 220, 100, 40], 'Callback', @initializeGame, 'Parent', fig, 'BackgroundColor', [0.678, 0.847, 0.902], 'ForegroundColor', [0, 0, 0]);
-        % Centrally aligned 'Exit Game' button, adjusted for aesthetic vertical spacing
+        % Zentral ausgerichtete Schaltfläche "Spiel beenden".
         uicontrol('Style', 'pushbutton', 'String', 'Exit Game', 'Position', [290, 170, 100, 40], 'Callback', @(src, event)close(fig), 'Parent', fig, 'BackgroundColor', [0.678, 0.847, 0.902], 'ForegroundColor', [0, 0, 0]);
     end
 
@@ -89,7 +89,7 @@ function battleship_gui_workspace
         decideStartingPlayer(); % Entscheide neu, wer das Spiel beginnt
     end
     
-    % New function to decide who starts without initiating an attack
+    % Entscheiden, wer beginnt, ohne einen Angriff zu starten    
     function decideStartingPlayer()
         if rand < 0.5
             startingPlayer = 'player';
@@ -97,18 +97,17 @@ function battleship_gui_workspace
         else
             startingPlayer = 'computer';
             updateStatus('Der Computer beginnt. Bitte platziere dein 5-Felder Schiff.');
-            % Do not start computer attack immediately
         end
     end
     
     function setupGameUI()
-        % Status Text at the top for clear visibility
+        % Statustext am oberen Rand für klare Sichtbarkeit
         statusText = uicontrol('Style', 'text', 'String', 'Platziere deine Schiffe (5 benötigt).', 'Position', [30, 450, 590, 40], 'FontSize', 12, 'Parent', fig);
     
-        % Adjust the placement of player and computer grids for better visual separation
-        % Player Grid
+        % Anpassen der Platzierung von Spieler- und Computergittern für eine bessere optische Trennung
+        % Spielerraster
         uicontrol('Style', 'text', 'String', 'Spielfeld', 'Position', [30, 430, 300, 20], 'Parent', fig);
-        % Computer Grid
+        % Computerraster
         uicontrol('Style', 'text', 'String', 'Computerfeld', 'Position', [350, 430, 300, 20], 'Parent', fig);
     
         % Generate buttons for player and computer grids
@@ -119,11 +118,11 @@ function battleship_gui_workspace
             end
         end
 
-        % Control Buttons for actions
+        % Erzeugen von Schaltflächen für Spieler- und Computergitter
         uicontrol('Style', 'pushbutton', 'String', 'Neustart', 'Position', [30, 20, 100, 30], 'Parent', fig, 'Callback', @(src,event)startScreen());
         uicontrol('Style', 'pushbutton', 'String', 'Spiel beenden', 'Position', [140, 20, 100, 30], 'Parent', fig, 'Callback', @(src, event)close(fig));
     
-        % Orientation Buttons for ship placement
+        % Orientierungsschaltflächen für die Platzierung von Schiffen
         uicontrol('Style', 'pushbutton', 'String', 'Horizontal', 'Position', [350, 20, 100, 30], 'Parent', fig, 'Callback', @(src,event)setOrientation('horizontal'));
         uicontrol('Style', 'pushbutton', 'String', 'Vertikal', 'Position', [460, 20, 100, 30], 'Parent', fig, 'Callback', @(src,event)setOrientation('vertical'));
     end
@@ -135,12 +134,13 @@ function battleship_gui_workspace
     end
 
     function playerBoardCallback(~, ~, row, col)
+    
         % Überprüfe, ob wir noch Schiffe zu platzieren haben
         if numPlayerShips >= length(shipSizes)
             updateStatus('Alle Schiffe sind bereits platziert.');
             return;
         end
-
+    
         shipSize = shipSizes(currentShipSizeIndex); % Aktuelle Schiffgröße
         if strcmp(shipOrientation, 'horizontal')
             % Überprüfe, ob das Schiff horizontal platziert werden kann
@@ -165,17 +165,25 @@ function battleship_gui_workspace
                 set(playerButtons(row + i, col), 'String', 'S', 'Enable', 'off', 'BackgroundColor', [0.5, 1, 0.5]);
             end
         end
-
+    
         % Aktualisiere die Anzahl der platzierten Schiffe
         numPlayerShips = numPlayerShips + 1;
         if numPlayerShips == length(shipSizes)
             updateStatus('Alle Schiffe platziert. Warte auf den Gegner.');
+            % Mache alle platzierten Schiffbuttons unsichtbar
+            for i = 1:numel(playerButtons)
+                if strcmp(get(playerButtons(i), 'String'), 'S')
+                    set(findall(fig, 'String', 'Horizontal'), 'Visible', 'off');
+                    set(findall(fig, 'String', 'Vertikal'), 'Visible', 'off');
+                end
+            end
+        
             set(arrayfun(@(x) x, computerButtons), 'Enable', 'on');
             if strcmp(startingPlayer, 'computer')
-				updateStatus('Alle Schiffe platziert. Warte auf den Gegner.');
+                updateStatus('Der Gegner beginnt. Warte auf den Gegner.');
                 pause(1); % Kurze Verzögerung
                 computerAttack(); % Der Computer startet seinen Angriff
-			else 
+            else 
                 updateStatus('Alle Schiffe platziert. Du bist dran mit Schiessen.');
             end
         else
@@ -183,34 +191,33 @@ function battleship_gui_workspace
             updateStatus(sprintf('Platziere dein %d-Felder Schiff.', shipSizes(currentShipSizeIndex)));
         end
     end
+
     
     function computerBoardCallback(src, ~, row, col)
-        set(src, 'Enable', 'off'); % Disable the button to prevent multiple clicks
+        set(src, 'Enable', 'off'); % Deaktivieren Sie die Schaltfläche, um Mehrfachklicks zu verhindern.
         if computerBoard(row, col) == 0
             computerBoard(row, col) = 3; % Miss
             set(src, 'String', '~', 'BackgroundColor', [0.678, 0.847, 0.902]); % Light blue
             updateStatus('Fehlschuss!');
             play(waterSound); % Spielt den Fehlschusssound
-            computerAttack(); % Now it's computer's turn
+            computerAttack(); % Jetzt ist der Computer an der Reihe
         elseif computerBoard(row, col) == 1
             computerBoard(row, col) = 2; % Hit
             set(src, 'String', 'X', 'ForegroundColor', 'white', 'BackgroundColor', 'red');
             updateStatus('Treffer!');
             play(bombSound); % Spielt den Treffersound
-            % Do not call computerAttack here to allow for another player turn
             if checkWin(computerBoard)
                 updateStatus('Spieler gewinnt! Alle Schiffe versenkt.');
                 disableBoard(computerButtons);
                 showVictoryScreen('Spieler');
             end
         end
-        % No else condition needed for calling computerAttack, as it's called only on miss
     end
 
 
 
     function placeComputerShips()
-        shipSizes = [5, 4, 3, 2, 2]; % Array of ship sizes
+        shipSizes = [5, 4, 3, 2, 2]; % Array von Schiffsgrößen
         for shipSize = shipSizes
             placed = false;
             while ~placed
@@ -223,9 +230,9 @@ function battleship_gui_workspace
                     col = randi(gridSize);
                 end
             
-                % Check if the space is free for the ship
+                % Prüfen, ob der Platz für das Schiff frei ist
                 if isSpaceFree(computerBoard, row, col, shipSize, orientation)
-                    % Place the ship
+                    % Platzieren Sie das Schiff
                     for i = 0:(shipSize - 1)
                         if orientation == 1
                             computerBoard(row, col + i) = 1;
@@ -291,7 +298,7 @@ end
 
 
     function [row, col] = findBestMove()
-		if strcmp(aiAttackMode, 'hunt')
+	    if strcmp(aiAttackMode, 'hunt')
 		
 		 % Im Hunt-Modus wähle zufällige Positionen im Schachbrettmuster
             foundValidMove = false;
@@ -316,48 +323,48 @@ end
     
     
     function [row, col] = findTarget()
-      % Find all cells with a hit (value 1) in the aiShotMatrix
+      % Suche nach allen Zellen mit einem Treffer (Wert 1) in der aiShotMatrix
         [hitRows, hitCols] = find(aiShotMatrix == 1);
         
-        % Initialize an empty list to store all legal neighboring cells
+        % Initialisierung einer leeren Liste zur Speicherung aller zulässigen Nachbarzellen
         allLegalNeighboringCells = [];
         
-        % Iterate over each hit cell
+        %Initialisierung einer leeren Liste zur Speicherung aller zulässigen Nachbarzellen
         for i = 1:length(hitRows)
             hitRow = hitRows(i);
             hitCol = hitCols(i);
             
-            % Determine neighboring cells
+            % Bestimmen Sie benachbarte Zellen
             neighboringCells = [];
-            % Check north
+            % Check Norden
             if hitRow > 1 && aiShotMatrix(hitRow - 1, hitCol) == 0
                 neighboringCells = [neighboringCells; hitRow - 1, hitCol];
             end
-            % Check south
+            % Check Süden
             if hitRow < gridSize && aiShotMatrix(hitRow + 1, hitCol) == 0
                 neighboringCells = [neighboringCells; hitRow + 1, hitCol];
             end
-            % Check west
+            % Check Westen
             if hitCol > 1 && aiShotMatrix(hitRow, hitCol - 1) == 0
                 neighboringCells = [neighboringCells; hitRow, hitCol - 1];
             end
-            % Check east
+            % Check Osten
             if hitCol < gridSize && aiShotMatrix(hitRow, hitCol + 1) == 0
                 neighboringCells = [neighboringCells; hitRow, hitCol + 1];
             end
             
-            % Add legal neighboring cells to the list
+            % Hinzufügen legaler Nachbarzellen zur Liste
             allLegalNeighboringCells = [allLegalNeighboringCells; neighboringCells];
         end
         
-        % If there are legal neighboring cells, choose one randomly
+        % Wenn es erlaubte benachbarte Zellen gibt, wähle eine zufällig aus
         if ~isempty(allLegalNeighboringCells)
             % Choose a random legal neighboring cell
             randomIndex = randi(size(allLegalNeighboringCells, 1));
             row = allLegalNeighboringCells(randomIndex, 1);
             col = allLegalNeighboringCells(randomIndex, 2);
         else
-            % If there are no legal neighboring cells, switch to hunt mode
+            % Wenn es keine zulässigen Nachbarzellen gibt, in den Jagdmodus wechseln
             aiAttackMode = 'hunt';
             [row, col] = findBestMove(); % Make a random shot in hunt mode
         end
@@ -379,25 +386,25 @@ end
     end
 
     function showVictoryScreen(winner)
-        clf(fig); % Clear the Figure window
+        clf(fig); % Löschen des Fensters Figure
         
-        % Load and resize the background image to fit the figure size
+        % Laden und Anpassen des Hintergrundbildes an die Größe der Figur
         bg = imread('Endscreen.png');
-        bgResized = imresize(bg, [500, 650]); % Resize the image to 500x650 pixels
+        bgResized = imresize(bg, [500, 650]); % Größe des Bildes auf 500x650 Pixel ändern
     
         % Create axes that fill the figure
         ax = axes('Parent', fig, 'Position', [0 0 1 1]);
         imagesc(ax, bgResized);
-        axis(ax, 'off'); % Turn off axis lines and labels
-        uistack(ax, 'bottom'); % Send the axes to the bottom layer
+        axis(ax, 'off'); % Achsenlinien und Beschriftungen ausschalten
+        uistack(ax, 'bottom'); % Senden der Achsen an die unterste Ebene
     
         % Centered victory message with larger font
         uicontrol('Style', 'text', 'String', sprintf('%s gewinnt!', winner), 'Position', [100, 250, 450, 60], 'FontSize', 20, 'FontWeight', 'bold', 'Parent', fig, 'HorizontalAlignment', 'center', 'BackgroundColor', 'none', 'ForegroundColor', [1, 1, 1]);
     
-        % Button for a new game
+        % Zentrierte Siegesmeldung mit größerer Schrift
         uicontrol('Style', 'pushbutton', 'String', 'Neues Spiel', 'Position', [265, 170, 150, 50], 'FontSize', 12, 'Parent', fig, 'Callback', @(src,event)startScreen(), 'BackgroundColor', [0, 0, 0, 0.5], 'ForegroundColor', [1, 1, 1]);
     
-        % Button to end the game
+        % Taste zum Beenden des Spiels
         uicontrol('Style', 'pushbutton', 'String', 'Spiel beenden', 'Position', [265, 110, 150, 50], 'FontSize', 12, 'Parent', fig, 'Callback', @(src, event)close(fig), 'BackgroundColor', [0, 0, 0, 0.5], 'ForegroundColor', [1, 1, 1]);
     end
 end
