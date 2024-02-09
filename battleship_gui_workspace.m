@@ -18,8 +18,8 @@ function battleship_gui_workspace
     global waterSound bombSound; % Globale Variabeln für Treffer und Miss Sound
     startScreen();
 
-% Funktion für die Hintergrundmusik    
-function playBackgroundMusic()
+    % Funktion für die Hintergrundmusik    
+    function playBackgroundMusic()
         persistent isLoaded; % Persistente Variable, um den Ladezustand zu speichern
         if isempty(isLoaded)
             audioFilePath = 'Menu.mp3';
@@ -268,36 +268,41 @@ function playBackgroundMusic()
 
     % Funktion für den Computerangriff
     function computerAttack()
-        pause(1);
-        [row, col] = findBestMove();
-        if playerBoard(row, col) <= 1
-            if playerBoard(row, col) == 1
-                playerBoard(row, col) = 2; % Mark as hit
-				aiShotMatrix(row, col) = 1; % KI: Angeschossen aber noch nicht versenkt
-                set(playerButtons(row, col), 'String', 'X', 'ForegroundColor', 'white', 'BackgroundColor', 'red');
-                updateStatus('Computer hat getroffen!');
-                play(bombSound); % Spielt den Treffersound
-                pause(2); % Delay of 2 seconds
-                if checkWin(playerBoard)
-                    updateStatus('Computer gewinnt! Alle Schiffe versenkt.');
-                    disableBoard(playerButtons);
-                    showVictoryScreen('Computer');
+        try
+            pause(1);
+            [row, col] = findBestMove();
+            if playerBoard(row, col) <= 1
+                if playerBoard(row, col) == 1
+                    playerBoard(row, col) = 2; % Mark as hit
+                    aiShotMatrix(row, col) = 1; % KI: Angeschossen aber noch nicht versenkt
+                    set(playerButtons(row, col), 'String', 'X', 'ForegroundColor', 'white', 'BackgroundColor', 'red');
+                    updateStatus('Computer hat getroffen!');
+                    play(bombSound); % Spielt den Treffersound
+                    pause(2); % Delay of 2 seconds
+                    if checkWin(playerBoard)
+                        updateStatus('Computer gewinnt! Alle Schiffe versenkt.');
+                        disableBoard(playerButtons);
+                        showVictoryScreen('Computer');
+                    else
+                        aiAttackMode = 'target';
+                        computerAttack();
+                    end
                 else
-					aiAttackMode = 'target';
-                    computerAttack();
+                    playerBoard(row, col) = 3; % Mark as miss
+                    aiShotMatrix(row, col) = 9; % KI: Verfehlt
+                    set(playerButtons(row, col), 'String', '~', 'BackgroundColor', [0.678, 0.847, 0.902]); % Light blue
+                    updateStatus('Computer hat verfehlt.');
+                    play(waterSound); % Spielt den Fehlschusssound
+                    pause(1); % Delay of 2 seconds
                 end
             else
-                playerBoard(row, col) = 3; % Mark as miss
-				 aiShotMatrix(row, col) = 9; % KI: Verfehlt
-                set(playerButtons(row, col), 'String', '~', 'BackgroundColor', [0.678, 0.847, 0.902]); % Light blue
-                updateStatus('Computer hat verfehlt.');
-                play(waterSound); % Spielt den Fehlschusssound
-                pause(1); % Delay of 2 seconds
+                computerAttack();
             end
-        else
-            computerAttack();
+        catch
+            % Verhindert einen Error-Spam im Falle einer frühzeitigen Programmschliessung
         end
     end
+
 
     % Funktion für den Hunt/Targetmove
     function [row, col] = findBestMove()
