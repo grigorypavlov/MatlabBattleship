@@ -1,11 +1,11 @@
 function battleship_gui_workspace
-    fig = figure('Name', 'Schiffe Versenken', 'NumberTitle', 'off', 'Resize', 'off', 'Position', [100, 100, 680, 500],'CloseRequestFcn', @stopMusicAndClose);
-    gridSize = 10;
-    buttonSize = [30, 30];
-    playerBoard = zeros(gridSize);
-    computerBoard = zeros(gridSize);
-	playerButtons = gobjects(gridSize, gridSize);
-    computerButtons = gobjects(gridSize, gridSize);
+    fig = figure('Name', 'Schiffe Versenken', 'NumberTitle', 'off', 'Resize', 'off', 'Position', [100, 100, 680, 500],'CloseRequestFcn', @stopMusicAndClose); % Erstellt GUI Fenster für das Spiel
+    gridSize = 10; % Definiert die Spielfeldgrösse
+    buttonSize = [30, 30]; % Definiert die Buttongrösse
+    playerBoard = zeros(gridSize); % Definiert die grösse des Spielerfelds
+    computerBoard = zeros(gridSize); % Definert die grösse des Computerfelds
+	playerButtons = gobjects(gridSize, gridSize); % Definiert die Buttons für das Spielerfeld 
+    computerButtons = gobjects(gridSize, gridSize);% Definiert die Buttons für das Computerfeld
     shipSizes = [5, 4, 3, 2, 2]; % Unterschiedliche Schiffsgrößen für Spieler und Computer
     currentShipSizeIndex = 1; % So verfolgen Sie, welche Schiffsgröße der Spieler gerade platziert
     shipOrientation = 'horizontal'; % Standardausrichtung
@@ -15,9 +15,10 @@ function battleship_gui_workspace
 	aiAttackMode = 'hunt'; % KI-Modus (Hunt/Target)
     aiShotMatrix = zeros(gridSize); % Matrix, um den Status der Felder zu verfolgen
     global audioData audioFs; % Globale Variablen für Audio-Daten und Sampling-Frequenz
-    global waterSound bombSound;
+    global waterSound bombSound; % Globale Variabeln für Treffer und Miss Sound
     startScreen();
-    
+
+% Funktion für die Hintergrundmusik    
 function playBackgroundMusic()
         persistent isLoaded; % Persistente Variable, um den Ladezustand zu speichern
         if isempty(isLoaded)
@@ -35,7 +36,8 @@ function playBackgroundMusic()
         play(player);
         set(fig, 'UserData', player);
     end
-
+    
+    % Funktion um die Musik zu Starten und zu stoppen 
     function stopMusicAndClose(src, event)
         player = get(fig, 'UserData');
         if ~isempty(player) && isvalid(player)
@@ -44,6 +46,7 @@ function playBackgroundMusic()
         delete(gcf);
     end
 
+    % Funktion für das erstellen des Startmenüs
     function startScreen()
         clf(fig); % Löschen des Objekts Figure für den Startbildschirm
         playBackgroundMusic();
@@ -66,7 +69,7 @@ function playBackgroundMusic()
         uicontrol('Style', 'pushbutton', 'String', 'Exit Game', 'Position', [290, 170, 100, 40], 'Callback', @(src, event)close(fig), 'Parent', fig, 'BackgroundColor', [0.678, 0.847, 0.902], 'ForegroundColor', [0, 0, 0]);
     end
 
-
+    % Funktion für die Spielinizialisierung
     function initializeGame(~, ~)
         clf(fig); % Bereinige das Figure-Objekt, um die UI zurückzusetzen
 
@@ -76,8 +79,7 @@ function playBackgroundMusic()
 		aiShotMatrix = zeros(gridSize);
         aiAttackMode = 'hunt';
 
-        % Setze die Schiffsplatzierungsvariablen zurück
-        numPlayerShips = 0;
+        numPlayerShips = 0; % Setze die Schiffsplatzierungsvariablen zurück
         currentShipSizeIndex = 1; % Zurück zum ersten Schiff
         shipOrientation = 'horizontal'; % Standardorientierung zurücksetzen
 
@@ -104,6 +106,7 @@ function playBackgroundMusic()
         end
     end
     
+    % Funktion um das Interface des Spiels zu Starten
     function setupGameUI()
         % Statustext am oberen Rand für klare Sichtbarkeit
         statusText = uicontrol('Style', 'text', 'String', 'Platziere deine Schiffe (5 benötigt).', 'Position', [30, 450, 590, 40], 'FontSize', 12, 'Parent', fig);
@@ -114,7 +117,7 @@ function playBackgroundMusic()
         % Computerraster
         uicontrol('Style', 'text', 'String', 'Computerfeld', 'Position', [350, 430, 300, 20], 'Parent', fig);
     
-        % Generate buttons for player and computer grids
+        % Buttons für Spieler und Computer erstellen
         for i = 1:gridSize
             for j = 1:gridSize
                 playerButtons(i, j) = uicontrol('Style', 'pushbutton', 'String', '', 'Position', [30+(j-1)*buttonSize(1), 380-(i-1)*buttonSize(2), buttonSize(1), buttonSize(2)], 'Parent', fig, 'Callback', {@playerBoardCallback, i, j});
@@ -131,20 +134,19 @@ function playBackgroundMusic()
         uicontrol('Style', 'pushbutton', 'String', 'Vertikal', 'Position', [460, 20, 100, 30], 'Parent', fig, 'Callback', @(src,event)setOrientation('vertical'));
     end
 
-
+    % Funktion für die Orientierung des Schiffs
     function setOrientation(orientation)
         shipOrientation = orientation;
         updateStatus(sprintf('Ausrichtung gesetzt zu %s. Platziere dein Schiff.', orientation));
     end
-
-    function playerBoardCallback(~, ~, row, col)
     
+    % Funktion für  das Spielerfeld 
+    function playerBoardCallback(~, ~, row, col)
         % Überprüfe, ob wir noch Schiffe zu platzieren haben
         if numPlayerShips >= length(shipSizes)
             updateStatus('Alle Schiffe sind bereits platziert.');
             return;
         end
-    
         shipSize = shipSizes(currentShipSizeIndex); % Aktuelle Schiffgröße
         if strcmp(shipOrientation, 'horizontal')
             % Überprüfe, ob das Schiff horizontal platziert werden kann
@@ -169,7 +171,6 @@ function playBackgroundMusic()
                 set(playerButtons(row + i, col), 'String', 'S', 'Enable', 'off', 'BackgroundColor', [0.5, 1, 0.5]);
             end
         end
-    
         % Aktualisiere die Anzahl der platzierten Schiffe
         numPlayerShips = numPlayerShips + 1;
         if numPlayerShips == length(shipSizes)
@@ -181,7 +182,6 @@ function playBackgroundMusic()
                     set(findall(fig, 'String', 'Vertikal'), 'Visible', 'off');
                 end
             end
-        
             set(arrayfun(@(x) x, computerButtons), 'Enable', 'on');
             if strcmp(startingPlayer, 'computer')
                 updateStatus('Der Gegner beginnt. Warte auf den Gegner.');
@@ -196,7 +196,7 @@ function playBackgroundMusic()
         end
     end
 
-    
+    % Funktion für das Computerspielfeld
     function computerBoardCallback(src, ~, row, col)
         set(src, 'Enable', 'off'); % Deaktivieren Sie die Schaltfläche, um Mehrfachklicks zu verhindern.
         if computerBoard(row, col) == 0
@@ -217,7 +217,8 @@ function playBackgroundMusic()
             end
         end
     end
-
+    
+    %Funktion um Computerschiffe zu platzieren
     function placeComputerShips()
         shipSizes = [5, 4, 3, 2, 2]; % Array von Schiffsgrößen
         for shipSize = shipSizes
@@ -265,7 +266,7 @@ function playBackgroundMusic()
         end
     end
 
-
+    % Funktion für den Computerangriff
     function computerAttack()
         pause(1);
         [row, col] = findBestMove();
@@ -298,7 +299,7 @@ function playBackgroundMusic()
         end
     end
 
-
+    % Funktion für den Hunt/Targetmove
     function [row, col] = findBestMove()
 	    if strcmp(aiAttackMode, 'hunt')
 		
@@ -323,7 +324,7 @@ function playBackgroundMusic()
     end
     
     
-    
+    % Funktion für den Targetmodus 
     function [row, col] = findTarget()
       % Suche nach allen Zellen mit einem Treffer (Wert 1) in der aiShotMatrix
         [hitRows, hitCols] = find(aiShotMatrix == 1);
@@ -368,25 +369,28 @@ function playBackgroundMusic()
         else
             % Wenn es keine zulässigen Nachbarzellen gibt, in den Jagdmodus wechseln
             aiAttackMode = 'hunt';
-            [row, col] = findBestMove(); % Make a random shot in hunt mode
+            [row, col] = findBestMove(); % Zufallsschuss im Hunt Modus abgeben
         end
     end
 
-
+    %Funktion um festzustellen wer gewonnen hat
     function win = checkWin(board)
-        win = all(board(:) ~= 1); % Win condition: no '1's left on the board
+        win = all(board(:) ~= 1); % Siegbedingung: keine 1 mehr auf dem Brett
     end
 
+    %Funktion um Buttons zu deaktivieren 
     function disableBoard(buttons)
         for i = 1:numel(buttons)
             set(buttons(i), 'Enable', 'off');
         end
     end
 
+    % Funktion zum Update der Statusnachricht
     function updateStatus(message)
         set(statusText, 'String', message);
     end
 
+    % Funktion zur erstellung des Victory Screens
     function showVictoryScreen(winner)
         clf(fig); % Löschen des Fensters Figure
         
