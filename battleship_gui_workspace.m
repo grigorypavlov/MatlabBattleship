@@ -4,18 +4,18 @@ function battleship_gui_workspace
     buttonSize = [30, 30];
     playerBoard = zeros(gridSize);
     computerBoard = zeros(gridSize);
-	aiShotMatrix = zeros(gridSize); % Matrix, um den Status der Felder zu verfolgen
-    playerButtons = gobjects(gridSize, gridSize);
+	playerButtons = gobjects(gridSize, gridSize);
     computerButtons = gobjects(gridSize, gridSize);
     shipSizes = [5, 4, 3, 2, 2]; % Unterschiedliche Schiffsgrößen für Spieler und Computer
     currentShipSizeIndex = 1; % So verfolgen Sie, welche Schiffsgröße der Spieler gerade platziert
     shipOrientation = 'horizontal'; % Standardausrichtung
     numPlayerShips = 0;
     statusText = uicontrol('Style', 'text', 'Position', [30, 430, 590, 40], 'Parent', fig);
-    startScreen();
     startingPlayer = ''; % Wird entweder auf 'Spieler' oder 'Computer' gesetzt
 	aiAttackMode = 'hunt'; % KI-Modus (Hunt/Target)
+    aiShotMatrix = zeros(gridSize); % Matrix, um den Status der Felder zu verfolgen
     global waterSound bombSound;
+    startScreen();
     
     function playBackgroundMusic()
         audioFilePath = 'Menu.mp3';
@@ -68,7 +68,6 @@ function battleship_gui_workspace
         % Setze die Spielbretter zurück
         playerBoard = zeros(gridSize);
         computerBoard = zeros(gridSize);
-		
 		aiShotMatrix = zeros(gridSize);
         aiAttackMode = 'hunt';
 
@@ -214,8 +213,6 @@ function battleship_gui_workspace
         end
     end
 
-
-
     function placeComputerShips()
         shipSizes = [5, 4, 3, 2, 2]; % Array von Schiffsgrößen
         for shipSize = shipSizes
@@ -246,22 +243,22 @@ function battleship_gui_workspace
         end
     end
 
-function free = isSpaceFree(board, row, col, size, orientation)
-    free = true;
-    for i = 0:(size - 1)
-        if orientation == 1
-            if board(row, col + i) ~= 0
-                free = false;
-                break;
-            end
-        else
-            if board(row + i, col) ~= 0
-                free = false;
-                break;
+    function free = isSpaceFree(board, row, col, size, orientation)
+        free = true;
+        for i = 0:(size - 1)
+            if orientation == 1
+                if board(row, col + i) ~= 0
+                    free = false;
+                    break;
+                end
+            else
+                if board(row + i, col) ~= 0
+                    free = false;
+                    break;
+                end
             end
         end
     end
-end
 
 
     function computerAttack()
