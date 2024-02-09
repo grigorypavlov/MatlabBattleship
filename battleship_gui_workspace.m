@@ -14,18 +14,23 @@ function battleship_gui_workspace
     startingPlayer = ''; % Wird entweder auf 'Spieler' oder 'Computer' gesetzt
 	aiAttackMode = 'hunt'; % KI-Modus (Hunt/Target)
     aiShotMatrix = zeros(gridSize); % Matrix, um den Status der Felder zu verfolgen
+    global audioData audioFs; % Globale Variablen für Audio-Daten und Sampling-Frequenz
     global waterSound bombSound;
     startScreen();
     
-    function playBackgroundMusic()
-        audioFilePath = 'Menu.mp3';
-        if ~isfile(audioFilePath)
-            error('Die Audiodatei wurde nicht gefunden: %s', audioFilePath);
+function playBackgroundMusic()
+        persistent isLoaded; % Persistente Variable, um den Ladezustand zu speichern
+        if isempty(isLoaded)
+            audioFilePath = 'Menu.mp3';
+            if ~isfile(audioFilePath)
+                error('Die Audiodatei wurde nicht gefunden: %s', audioFilePath);
+            end
+            [audioData, audioFs] = audioread(audioFilePath);
+            isLoaded = true; % Setze isLoaded nach dem ersten Laden
         end
-        [y, Fs] = audioread(audioFilePath);
         volumeFactor = 0.1;
-        y = y * volumeFactor;
-        player = audioplayer(y, Fs);
+        audioDataVolumeAdjusted = audioData * volumeFactor;
+        player = audioplayer(audioDataVolumeAdjusted, audioFs);
         set(player, 'StopFcn', @(src, event)play(src));
         play(player);
         set(fig, 'UserData', player);
